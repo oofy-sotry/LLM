@@ -1,0 +1,8 @@
+torch==1.13.1,
+transformers==4.30.0,
+datasets==2.6.0,
+bitsandbytes==0.39.0, #GPU를 사용하기 위한 라이브러리, CPU사용할 거라면 없어도 됨
+peft==0.3.0,
+trl==0.4.0,
+huggingface_hub==0.15.0
+tensorboard

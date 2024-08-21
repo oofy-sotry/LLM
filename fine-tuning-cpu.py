@@ -9,11 +9,10 @@ from transformers import (
     logging,
 )
 from peft import LoraConfig, PeftModel
-from trl import SFTTrainer
+from trl import SFTTrainer, SFTConfig
 from huggingface_hub import login
 
 # 모델 및 데이터셋 설정
-#model_name = "/home/oofy/Documents/LangChain/model/Llama-2-7b-hf"
 model_name = "meta-llama/Llama-2-7b-hf"
 dataset_name = "HAERAE-HUB/Korean-Human-Judgements"
 new_model = "jeunghyen/llama-2-ko-7b-1"
@@ -43,16 +42,17 @@ lr_scheduler_type = "cosine"
 max_steps = -1
 warmup_ratio = 0.03
 group_by_length = True
-save_steps = 1000  # 체크포인트 저장 스텝
+save_steps = 1000
 logging_steps = 25
 
-# 미리 정의되지 않은 변수 초기화
-max_seq_length = 512  # 시퀀스의 최대 길이
-packing = True  # 패킹 여부
+# 시퀀스의 최대 길이 및 패킹 여부
+max_seq_length = 512
+packing = True
 
 # device_map 설정 (CPU로 설정)
 device_map = {"": "cpu"}  # CPU에 로드
 
+# Hugging Face Hub 로그인
 login(token="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")
 
 # 데이터셋 로드
@@ -62,20 +62,26 @@ try:
 except Exception as e:
     print(f"An error occurred while loading the dataset: {e}")
 
-# 기본 모델 로드 (CPU에서 로드)
+# 데이터셋 필드 확인
+print(dataset.column_names)  # 데이터셋의 필드 이름 확인
+datafield = dataset.column_names
+# dataset_text_field를 'text'가 아닌 실제 필드 이름으로 수정
+dataset_text_field = datafield  # 실제 필드 이름으로 수정
+
+# 모델 로드 (CPU에서 로드)
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
-    device_map=device_map,  # CPU 사용
+    device_map=device_map,
     low_cpu_mem_usage=True,
     torch_dtype=torch.float32  # CPU에서 float32로 명시적 설정
 )
 model.config.use_cache = False
 model.config.pretraining_tp = 1
 
-# LLaMA 토크나이저 로드
+# 토크나이저 로드
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-tokenizer.pad_token = tokenizer.eos_token  # 패딩 토큰을 EOS 토큰으로 설정
-tokenizer.padding_side = "right"  # 패딩을 오른쪽에 추가
+tokenizer.pad_token = tokenizer.eos_token
+tokenizer.padding_side = "right"
 
 # LoRA 설정 로드
 peft_config = LoraConfig(
@@ -86,37 +92,46 @@ peft_config = LoraConfig(
     task_type="CAUSAL_LM",
 )
 
-# 훈련 파라미터 설정
+# SFTConfig로 설정값 전달
+sft_config = SFTConfig(
+#    peft_config=peft_config, 
+    dataset_text_field=dataset_text_field,
+    max_seq_length=max_seq_length,
+    packing=packing,
+    output_dir=output_dir  # output_dir을 추가하여 필수 인자 제공
+)
+
+# 훈련 파라미터 설정 GPU에서는 bitsandbytes를 사용하지만 CPU에서는 사용할 수 없기 때문에 설정 변경
 training_arguments = TrainingArguments(
     output_dir=output_dir,
     num_train_epochs=num_train_epochs,
     per_device_train_batch_size=per_device_train_batch_size,
     gradient_accumulation_steps=gradient_accumulation_steps,
-    optim=optim,
+    optim="adamw_hf",  # 기본 AdamW 옵티마이저 사용
     save_steps=save_steps,
     logging_steps=logging_steps,
     learning_rate=learning_rate,
     weight_decay=weight_decay,
-    fp16=fp16,  # CPU에서 fp16 사용 안 함
-    bf16=bf16,  # CPU에서 bf16 사용 안 함
+    fp16=fp16,
+    bf16=bf16,
     max_grad_norm=max_grad_norm,
     max_steps=max_steps,
     warmup_ratio=warmup_ratio,
     group_by_length=group_by_length,
     lr_scheduler_type=lr_scheduler_type,
-    report_to="tensorboard"
+    report_to="none"
 )
 
-# SFTTrainer 설정
+# SFTTrainer 설정: 각 설정을 개별적으로 전달
 trainer = SFTTrainer(
     model=model,
     train_dataset=dataset,
-    peft_config=peft_config,
-    dataset_text_field="text",
-    max_seq_length=max_seq_length,
     tokenizer=tokenizer,
     args=training_arguments,
-    packing=packing,
+    peft_config=peft_config,  # LoRA 설정 전달
+    dataset_text_field="instruction",  # 데이터셋 텍스트 필드명
+    max_seq_length=max_seq_length,  # 최대 시퀀스 길이
+    packing=packing  # 패킹 설정
 )
 
 # 모델 훈련
@@ -140,6 +155,6 @@ tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "right"
 
 # Hugging Face Hub에 푸시
-login(token="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")  # Hugging Face API 토큰으로 로그인
+login(token="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")
 model.push_to_hub(new_model, use_temp_dir=False)
 tokenizer.push_to_hub(new_model, use_temp_dir=False)
