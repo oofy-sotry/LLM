@@ -1,0 +1,26 @@
+1. ollama에서 llama2 다운 및 설치
+    - 사용방법 : ollama run llama2
+2. llama2 사용방법
+    - streamlit 사용 : streamlit run 파일명
+
+ollama 설치 방법
+    - curl -fsSL https://ollama.com/install.sh | sh
+
+--------------------------
+
+1. llama2 학습해보기
+    1. huggingface에서 모델 다운 
+        - llama-2-7B 사용하려고 했으나 config 파일을 찾이 못함
+            - 검색해본 결과 다른 사람들도 config 파일이 없어서 다른 버전 사용
+        - llama-2-7B-hf 사용
+
+    2. huggingface의 학습 데이터 사용
+        - Datasets이라고 명시되어진것 사용해야함
+
+    3. nvidia와 amd를 돌리는 방법이 다름
+        - amd 보다는 nvidia가 더 좋은 성능과 쉬운 방법을 가진걸로 파악
+    
+    4. CPU로 학습 
+        4.1. 모델을 Local에 다운받아서 실행하려고 했더니 CPU 성능 문제로 에러 발생
+            - huggingface의 URL 주소로 변경해서 실행했더니 성공
+            +- 성능 문제인지 로컬에서는 죽음 유지보수 서버에서 진행할 예정
