@@ -7,7 +7,7 @@ ollama 설치 방법
     - curl -fsSL https://ollama.com/install.sh | sh
 
 --------------------------
-정
+
 1. llama2 학습해보기
     1. huggingface에서 모델 다운 
         - llama-2-7B 사용하려고 했으나 config 파일을 찾이 못함

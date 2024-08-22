@@ -65,7 +65,6 @@ except Exception as e:
 # 데이터셋 필드 확인
 print(dataset.column_names)  # 데이터셋의 필드 이름 확인
 datafield = dataset.column_names
-# dataset_text_field를 'text'가 아닌 실제 필드 이름으로 수정
 dataset_text_field = datafield  # 실제 필드 이름으로 수정
 
 # 모델 로드 (CPU에서 로드)
@@ -94,14 +93,13 @@ peft_config = LoraConfig(
 
 # SFTConfig로 설정값 전달
 sft_config = SFTConfig(
-#    peft_config=peft_config, 
     dataset_text_field=dataset_text_field,
     max_seq_length=max_seq_length,
     packing=packing,
     output_dir=output_dir  # output_dir을 추가하여 필수 인자 제공
 )
 
-# 훈련 파라미터 설정 GPU에서는 bitsandbytes를 사용하지만 CPU에서는 사용할 수 없기 때문에 설정 변경
+# 훈련 파라미터 설정
 training_arguments = TrainingArguments(
     output_dir=output_dir,
     num_train_epochs=num_train_epochs,
@@ -122,7 +120,7 @@ training_arguments = TrainingArguments(
     report_to="none"
 )
 
-# SFTTrainer 설정: 각 설정을 개별적으로 전달
+# SFTTrainer 설정
 trainer = SFTTrainer(
     model=model,
     train_dataset=dataset,
@@ -137,8 +135,12 @@ trainer = SFTTrainer(
 # 모델 훈련
 trainer.train()
 
+# 훈련된 모델 저장 경로
+model_save_dir = "./trained_model"  # 저장할 디렉토리 설정
+
 # 훈련된 모델 저장
-trainer.model.save_pretrained(new_model)
+trainer.model.save_pretrained(model_save_dir)
+tokenizer.save_pretrained(model_save_dir)
 
 # 기본 모델과 통합된 LoRA 가중치 저장
 base_model = AutoModelForCausalLM.from_pretrained(
@@ -146,15 +148,9 @@ base_model = AutoModelForCausalLM.from_pretrained(
     low_cpu_mem_usage=True,
     return_dict=True
 )
-model = PeftModel.from_pretrained(base_model, new_model)
+model = PeftModel.from_pretrained(base_model, model_save_dir)
 model = model.merge_and_unload()
 
-# 사전 훈련된 토크나이저 로드 및 설정
-tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-tokenizer.pad_token = tokenizer.eos_token
-tokenizer.padding_side = "right"
-
-# Hugging Face Hub에 푸시
-login(token="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")
-model.push_to_hub(new_model, use_temp_dir=False)
-tokenizer.push_to_hub(new_model, use_temp_dir=False)
+# Hugging Face Hub에 모델 및 토크나이저 푸시
+model.push_to_hub(new_model)
+tokenizer.push_to_hub(new_model)
