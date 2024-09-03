@@ -22,16 +22,15 @@ def display_chat_history():
 user_input = st.text_input("사용자 입력")
 
 if user_input:
-    # 사용자 입력을 토큰화
-    inputs = tokenizer(user_input, return_tensors="pt")
+    # 사용자 입력을 토크나이즈하고 텐서로 변환
+    input_ids = tokenizer.encode(user_input, return_tensors="pt")
     
-    # 모델을 사용하여 응답 생성
-    outputs = model.generate(inputs["input_ids"], max_length=100, num_return_sequences=1)
+    # 모델로부터 응답 생성
+    output = model.generate(input_ids, max_length=100, num_return_sequences=1)
     
-    # 토큰을 텍스트로 변환
-    bot_response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    # 응답을 디코딩하여 텍스트로 변환
+    bot_response = tokenizer.decode(output[0], skip_special_tokens=True)
     
-    # 대화 기록에 추가
     add_to_chat_history(user_input, bot_response)
     st.session_state.user_input = ""
 
