@@ -15,7 +15,7 @@ from huggingface_hub import login
 # 모델 및 데이터셋 설정
 model_name = "jeunghyen/llama-2-ko-7b-1"
 dataset_name = "maywell/korean_textbooks"
-dataset_config_name = "tiny-textbooks"
+dataset_config_name = "helpsteer"
 new_model = "jeunghyen/llama-2-ko-7b-2"
 
 # LoRA 설정
