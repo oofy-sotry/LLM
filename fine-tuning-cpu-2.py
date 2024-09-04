@@ -58,7 +58,7 @@ login(token="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")
 
 # 데이터셋 로드 (config_name 인자 추가)
 try:
-    dataset = load_dataset(dataset_name, config_name=dataset_config_name, split="train")
+    dataset = load_dataset(dataset_name, dataset_config_name, split="train")
     print(f"Dataset '{dataset_name}' loaded successfully.")
 except Exception as e:
     print(f"An error occurred while loading the dataset: {e}")
@@ -74,11 +74,10 @@ dataset_text_field = datafield[0]  # 실제 텍스트 필드명을 사용하도�
 # 모델 로드 (CPU에서 로드)
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
-    device_map=device_map,
-    low_cpu_mem_usage=True,
-    torch_dtype=torch.float32  # CPU에서 float32로 명시적 설정
+    low_cpu_mem_usage=True,  # 메모리 최적화를 위해 이 옵션 유지
+    torch_dtype=torch.float32  # CPU에서 사용 시 float32로 설정
 )
-model.config.use_cache = False
+model.config.use_cache = False정
 model.config.pretraining_tp = 1
 
 # 토크나이저 로드
