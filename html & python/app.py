@@ -15,7 +15,6 @@ chain = prompt | llm | output_parser
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    print("------------------------")
 
     try:
         # print(request.json)
@@ -24,7 +23,7 @@ def chat():
         # prompt_text = user_input["prompt"]
 
         if request.get_json(silent=True) == None :
-            prompt_text = "빈칸입니다."
+            prompt_text = "데이터가 들어오지 않아 질문이 없습니다."
         else :
             user_input = request.get_json()
             prompt_text = user_input["prompt"]
