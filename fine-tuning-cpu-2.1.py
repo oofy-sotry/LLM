@@ -188,6 +188,13 @@ base_model = AutoModelForCausalLM.from_pretrained(
 )
 peft_model = get_peft_model(base_model, peft_config)
 
+# 병합 전 활성 어댑터 확인
+print("Active adapter before merge:", peft_model.active_adapter)
+Active_adapter = peft_model.active_adapter
+
+# 활성 어댑터 수동 설정 (필요한 경우) LoRA 가중치를 병합하는 과정에서 오류 발생
+peft_model.set_adapter(Active_adapter)  # 'default'는 어댑터 이름입니다. 실제 사용된 이름을 여기에 넣으세요.
+
 # 병합된 모델로부터 최종 모델 저장
 merged_model = peft_model.merge_and_unload()
 
