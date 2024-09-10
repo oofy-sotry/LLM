@@ -47,3 +47,6 @@ dataset_text_field 자동 설정: 데이터셋의 텍스트 필드명을 자동�
 메모리 최적화: low_cpu_mem_usage=True로 CPU에서 메모리 사용을 감소
 merge_and_unload() 호출: LoRA 가중치를 병합하여 모델을 최종적으로 훈련된 상태로 저장하고 로드하는 방식으로 개선
 packing 비활성화
+
+- LoRA 가중치를 병합하는 과정에서 오류 발생
+    - 활성 어댑터 수동 설정하는 걸로 진행
