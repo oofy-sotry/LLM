@@ -14,10 +14,10 @@ from huggingface_hub import login
 login(token="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")
 
 # 모델 및 데이터셋 설정
-model_name = "jeunghyen/llama-2-ko-7b-2"
-dataset_name = "ChuGyouk/argilla-distilabel-math-preference-dpo-korean"
+model_name = "jeunghyen/llama-2-ko-7b-3"
+dataset_name = "psyche/korean_idioms"
 dataset_config_name = "default"
-new_model = "jeunghyen/llama-2-ko-7b-3"
+new_model = "jeunghyen/llama-2-ko-7b-4"
 
 # LoRA 설정
 lora_r = 64
@@ -120,6 +120,10 @@ except Exception as e:
     print(f"An error occurred during tokenization: {e}")
     raise
 
+# 'label' 필드를 'labels'로 변경 (필요할 경우)
+if 'label' in tokenized_dataset.column_names:
+    tokenized_dataset = tokenized_dataset.rename_column("label", "labels")
+
 # LoRA 설정 로드
 peft_config = LoraConfig(
     lora_alpha=lora_alpha,
@@ -174,7 +178,7 @@ trainer = SFTTrainer(
 trainer.train()
 
 # 훈련된 모델 저장 경로
-model_save_dir = "./trained_model_2"
+model_save_dir = "./trained_model_4"
 
 # 훈련된 모델 저장
 trainer.model.save_pretrained(model_save_dir)
