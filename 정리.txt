@@ -50,3 +50,12 @@ packing 비활성화
 
 - LoRA 가중치를 병합하는 과정에서 오류 발생
     - 활성 어댑터 수동 설정하는 걸로 진행
+
+------------------------------
+
+promt 사용
+1. langchain 없이 promtp 사용 가능
+    - 예) app_20240912_prompt사용버전.py
+
+2. langchain 사용해 promtp 사용
+    - 예) app_20240912_prompt_langchain사용버전.py
