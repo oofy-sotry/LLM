@@ -6,7 +6,7 @@ from langchain_community.vectorstores.utils import DistanceStrategy
 from peft import PeftModel, PeftConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# 1. 데이터 로드(Load Data)
+# 1. 데이터 로드(Load Data) - 웹 문서 사용, 텍스트문서나 CSV문서 등 다른 방법도 가능
 url = 'https://ko.wikipedia.org/wiki/%EC%9C%84%ED%82%A4%EB%B0%B1%EA%B3%BC:%EC%A0%95%EC%B1%85%EA%B3%BC_%EC%A7%80%EC%B9%A8'
 loader = WebBaseLoader(url)
 docs = loader.load()
