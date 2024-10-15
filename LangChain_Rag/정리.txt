@@ -22,3 +22,12 @@ RAG 파이프라인
 2. MMR 검색 선택한 이유
     - MMR의 목적 : 검색 결과의 다양성을 증가시키는 것
     - 선택한 이유 : 여러가지 결과과 나오는 것을 확인하고 싶어서 
+
+
+
+
+참고 사이트 
+https://www.ncloud-forums.com/topic/307
+https://wikidocs.net/231393
+https://wikidocs.net/261571
+https://wikidocs.net/233348

@@ -1,6 +1,6 @@
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.vectorstores.utils import DistanceStrategy
 from peft import PeftModel, PeftConfig
@@ -27,11 +27,11 @@ print(splits[10])
 print("----------------------------------------------------------------------------------------------------")
 
 # 3. 인덱싱(Indexing) : 텍스트 -> 임베딩 -> 저장
-model_name = "jhgan/ko-sroberta-nli"
+# 수정 이유 : name 이라는 변수를 이제는 사용하지 않음, model_name이라는 변수로 수정
 embeddings_model = HuggingFaceEmbeddings(
-    model=model_name,
-    model_kwargs={'device':'cpu'},
-    encode_kwargs={'normalize_embeddings':True},
+    model_name="jhgan/ko-sroberta-nli",
+    model_kwargs={'device': 'cpu'},
+    encode_kwargs={'normalize_embeddings': True}
 )
 
 # 4. 임베딩 계산
@@ -39,9 +39,14 @@ embeddings = embeddings_model.embed_documents([split.page_content for split in s
 print(f"임베딩 개수: {len(embeddings)}, 첫 번째 임베딩 길이: {len(embeddings[0])}")
 
 # 5. Vector Store : FAISS 사용 - CPU 사용 버전 사용
+# 수정 1 - 이유 : FAISS 벡터스토어는 임베딩 벡터와 해당하는 문서를 함께 받아야 함
+# 수정 2 - 이유 : text_embeddings는 텍스트와 해당 텍스트에 대한 임베딩을 짝지은 튜플이어야 함
+
+text_embeddings = list(zip([split.page_content for split in splits], embeddings))
+
 vectorstore = FAISS.from_embeddings(
-    embeddings=embeddings,
-    documents=splits,  # 분할된 문서를 사용합니다
+    text_embeddings=text_embeddings,  # 기존의 embeddings 리스트 사용
+    embedding=embeddings_model,   # 문서의 임베딩을 생성한 모델 표시
     distance_strategy=DistanceStrategy.COSINE
 )
 
@@ -72,15 +77,16 @@ def format_docs(docs):
     return '\n\n'.join([d.page_content for d in docs])
 
 # 9. Peft 및 토크나이저 모델 로드
-config = PeftConfig.from_pretrained("jeunghyen/llama-2-ko-7b-1")
+config = PeftConfig.from_pretrained("jeunghyen/llama-2-ko-7b-4")
 base_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
-model = PeftModel.from_pretrained(base_model, "jeunghyen/llama-2-ko-7b-1")
+model = PeftModel.from_pretrained(base_model, "jeunghyen/llama-2-ko-7b-4")
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
 
 # 10. 텍스트 추론 및 결과 생성
 input_text = template.format(context=format_docs(docs), question=query)
 inputs = tokenizer(input_text, return_tensors='pt')
-output = model.generate(**inputs, max_length=512)
+# 수정 이유 : 답변에 대한 길이로 인한 오류 발생
+output = model.generate(**inputs, max_new_tokens=512)
 response = tokenizer.decode(output[0], skip_special_tokens=True)
 
 # 11. 응답 출력
