@@ -1,3 +1,25 @@
+# 답변을 생성하는 속도가 너무 느림
+# 수정한 부분
+# 1. 입력 텍스트 길이 조정
+#   - text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+# 2. top_k, top_p 설정 조정
+#   - 장점 : 시간을 줄일수 있음
+#   - 단점 : 답변의 다양성 줄어듬
+#   - output = model.generate(**inputs, max_new_tokens=512, top_k=20, top_p=0.9)
+# 2.1 num_beams 값 조정(사용안함)
+#   - 탐색 범위를 줄여서 시간을 줄임
+#   - output = model.generate(**inputs, max_new_tokens=512, num_beams=1)
+# 3. FP16 (반정밀도 연산) 사용
+#   - base_model = AutoModelForCausalLM.from_pretrained(
+#       "meta-llama/Llama-2-7b-hf",
+#       torch_dtype=torch.float16
+#     )
+# 4. 문서 개수 및 검색 최적화
+#   - retriever = vectorstore.as_retriever(
+#       search_type='mmr',
+#       search_kwargs={'k': 3, 'fetch_k': 30}
+#     )
+
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -5,6 +27,12 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.vectorstores.utils import DistanceStrategy
 from peft import PeftModel, PeftConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from huggingface_hub import login
+
+
+
+login(token="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")
+print("----------------------------------------------------------------------------------------------------")
 
 # 1. 데이터 로드(Load Data) - 웹 문서 사용, 텍스트문서나 CSV문서 등 다른 방법도 가능
 url = 'https://ko.wikipedia.org/wiki/%EC%9C%84%ED%82%A4%EB%B0%B1%EA%B3%BC:%EC%A0%95%EC%B1%85%EA%B3%BC_%EC%A7%80%EC%B9%A8'
@@ -125,28 +153,3 @@ print("-------------------------------------------------------------------------
 
 # 11. 응답 출력
 print(response)
-
-
-
-# 답변을 생성하는 속도가 너무 느림
-# 수정한 부분
-# 1. 입력 텍스트 길이 조정
-#   - text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
-# 2. top_k, top_p 설정 조정
-#   - 장점 : 시간을 줄일수 있음
-#   - 단점 : 답변의 다양성 줄어듬
-#   - output = model.generate(**inputs, max_new_tokens=512, top_k=20, top_p=0.9)
-# 2.1 num_beams 값 조정(사용안함)
-#   - 탐색 범위를 줄여서 시간을 줄임
-#   - output = model.generate(**inputs, max_new_tokens=512, num_beams=1)
-# 3. FP16 (반정밀도 연산) 사용
-#   - base_model = AutoModelForCausalLM.from_pretrained(
-#       "meta-llama/Llama-2-7b-hf",
-#       torch_dtype=torch.float16
-#     )
-# 4. 문서 개수 및 검색 최적화
-#   - retriever = vectorstore.as_retriever(
-#       search_type='mmr',
-#       search_kwargs={'k': 3, 'fetch_k': 30}
-#     )
-

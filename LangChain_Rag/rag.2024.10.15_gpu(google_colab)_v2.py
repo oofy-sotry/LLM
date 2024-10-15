@@ -1,3 +1,13 @@
+# 패키지 설치
+!pip install langchain
+!pip install faiss-gpu
+!pip install peft
+!pip install transformers
+!pip install unstructured
+!pip install -U langchain-community
+!pip install langchain_huggingface
+!pip install huggingface_hub
+
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -8,9 +18,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from huggingface_hub import login
 
 login(token="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")
+
 print("----------------------------------------------------------------------------------------------------")
 
-# 1. 데이터 로드(Load Data) - 웹 문서 사용, 텍스트문서나 CSV문서 등 다른 방법도 가능
 url = 'https://ko.wikipedia.org/wiki/%EC%9C%84%ED%82%A4%EB%B0%B1%EA%B3%BC:%EC%A0%95%EC%B1%85%EA%B3%BC_%EC%A7%80%EC%B9%A8'
 loader = WebBaseLoader(url)
 docs = loader.load()
@@ -21,7 +31,6 @@ print(docs[0].page_content[5000:6000])
 
 print("----------------------------------------------------------------------------------------------------")
 
-# 2. 텍스트 분할(Text Split)
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 splits = text_splitter.split_documents(docs)
 
@@ -30,36 +39,33 @@ print(splits[10])
 
 print("----------------------------------------------------------------------------------------------------")
 
-# 3. 인덱싱(Indexing) : 텍스트 -> 임베딩 -> 저장
-# 수정 이유 : name 이라는 변수를 이제는 사용하지 않음, model_name이라는 변수로 수정
 embeddings_model = HuggingFaceEmbeddings(
     model_name="jhgan/ko-sroberta-nli",
-    model_kwargs={'device': 'cpu'},
+    model_kwargs={'device': 'cuda'},
     encode_kwargs={'normalize_embeddings': True}
 )
 
-# 4. 임베딩 계산
+print("----------------------------------------------------------------------------------------------------")
 embeddings = embeddings_model.embed_documents([split.page_content for split in splits])
 print(f"임베딩 개수: {len(embeddings)}, 첫 번째 임베딩 길이: {len(embeddings[0])}")
 
-# 5. Vector Store : FAISS 사용 - CPU 사용 버전 사용
-# 수정 1 - 이유 : FAISS 벡터스토어는 임베딩 벡터와 해당하는 문서를 함께 받아야 함
-# 수정 2 - 이유 : text_embeddings는 텍스트와 해당 텍스트에 대한 임베딩을 짝지은 튜플이어야 함
+print("----------------------------------------------------------------------------------------------------")
 
 text_embeddings = list(zip([split.page_content for split in splits], embeddings))
 
 vectorstore = FAISS.from_embeddings(
-    text_embeddings=text_embeddings,  # 기존의 embeddings 리스트 사용
-    embedding=embeddings_model,   # 문서의 임베딩을 생성한 모델 표시
+    text_embeddings=text_embeddings,
+    embedding=embeddings_model,
     distance_strategy=DistanceStrategy.COSINE
 )
 
-# 6. Vector Store 저장
+print("----------------------------------------------------------------------------------------------------")
+
 vectorstore.save_local('./db/faiss')
 
-# 7. 검색
+print("----------------------------------------------------------------------------------------------------")
+
 query = "위키백과의 정책에 대해서 알려줘"
-# MMR - 다양성 고려 (lambda_mult = 0.5)
 retriever = vectorstore.as_retriever(
     search_type='mmr',
     search_kwargs={'k': 5, 'fetch_k': 50}
@@ -69,29 +75,35 @@ docs = retriever.get_relevant_documents(query)
 print(len(docs))
 print(docs[0])
 
-# 8. prompt 설정
+print("----------------------------------------------------------------------------------------------------")
+
 template = '''Answer the question based only on the following context:
 {context}
 
 Question: {question}
 '''
 
-# 포맷 함수
+print("----------------------------------------------------------------------------------------------------")
+
 def format_docs(docs):
     return '\n\n'.join([d.page_content for d in docs])
 
-# 9. Peft 및 토크나이저 모델 로드
+print("----------------------------------------------------------------------------------------------------")
+
 config = PeftConfig.from_pretrained("jeunghyen/llama-2-ko-7b-4")
 base_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
 model = PeftModel.from_pretrained(base_model, "jeunghyen/llama-2-ko-7b-4")
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
 
-# 10. 텍스트 추론 및 결과 생성
+print("----------------------------------------------------------------------------------------------------")
+
 input_text = template.format(context=format_docs(docs), question=query)
 inputs = tokenizer(input_text, return_tensors='pt')
 # 수정 이유 : 답변에 대한 길이로 인한 오류 발생
 output = model.generate(**inputs, max_new_tokens=512)
 response = tokenizer.decode(output[0], skip_special_tokens=True)
 
-# 11. 응답 출력
+print("----------------------------------------------------------------------------------------------------")
 print(response)
+
+
