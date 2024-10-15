@@ -1,3 +1,25 @@
+# 답변을 생성하는 속도가 너무 느림
+# 수정한 부분
+# 1. 입력 텍스트 길이 조정
+#   - text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+# 2. top_k, top_p 설정 조정
+#   - 장점 : 시간을 줄일수 있음
+#   - 단점 : 답변의 다양성 줄어듬
+#   - output = model.generate(**inputs, max_new_tokens=512, top_k=20, top_p=0.9)
+# 2.1 num_beams 값 조정(사용안함)
+#   - 탐색 범위를 줄여서 시간을 줄임
+#   - output = model.generate(**inputs, max_new_tokens=512, num_beams=1)
+# 3. FP16 (반정밀도 연산) 사용
+#   - base_model = AutoModelForCausalLM.from_pretrained(
+#       "meta-llama/Llama-2-7b-hf",
+#       torch_dtype=torch.float16
+#     )
+# 4. 문서 개수 및 검색 최적화
+#   - retriever = vectorstore.as_retriever(
+#       search_type='mmr',
+#       search_kwargs={'k': 3, 'fetch_k': 30}
+#     )
+
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -7,6 +29,7 @@ from peft import PeftModel, PeftConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from huggingface_hub import login
 import torch
+
 
 
 login(token="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")
@@ -34,6 +57,7 @@ print(splits[10])
 print("----------------------------------------------------------------------------------------------------")
 
 # 3. 인덱싱(Indexing) : 텍스트 -> 임베딩 -> 저장
+# 수정 이유 : name 이라는 변수를 이제는 사용하지 않음, model_name이라는 변수로 수정
 embeddings_model = HuggingFaceEmbeddings(
     model_name="jhgan/ko-sroberta-nli",
     model_kwargs={'device': 'cpu'},
@@ -48,6 +72,9 @@ print(f"임베딩 개수: {len(embeddings)}, 첫 번째 임베딩 길이: {len(e
 print("----------------------------------------------------------------------------------------------------")
 
 # 5. Vector Store : FAISS 사용 - CPU 사용 버전 사용
+# 수정 1 - 이유 : FAISS 벡터스토어는 임베딩 벡터와 해당하는 문서를 함께 받아야 함
+# 수정 2 - 이유 : text_embeddings는 텍스트와 해당 텍스트에 대한 임베딩을 짝지은 튜플이어야 함
+
 text_embeddings = list(zip([split.page_content for split in splits], embeddings))
 
 vectorstore = FAISS.from_embeddings(
@@ -85,7 +112,13 @@ Question: {question}
 '''
 
 # 포맷 함수
+# 수정 : 입력 텍스트 길이 조정
+# 이유 : 입력 텍스트가 너무 길면 미리 잘라서 모델이 처리할 수 있는 범위로 조정하기 위해
 def format_docs(docs, max_length=4096):
+    """
+    입력 텍스트의 길이가 너무 길 경우 모델에서 허용하는 길이로 잘라서 반환하는 함수
+    max_length는 모델에서 허용하는 최대 입력 토큰 길이
+    """
     total_length = 0
     selected_docs = []
 
@@ -110,33 +143,22 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
 print("----------------------------------------------------------------------------------------------------")
 
 # 10. 텍스트 추론 및 결과 생성
+# max_length로 입력 텍스트 길이를 조정
+# 10.1 입력 텍스트의 길이를 줄이기
 input_text = template.format(context=format_docs(docs[:3]), question=query)  # 상위 3개의 문서만 사용
+print("10.1")
+# 10.2 Tokenizer에서 max_length 설정 및 truncate 사용
 inputs = tokenizer(input_text, return_tensors='pt', max_length=4096, truncation=True)
-
-# 토큰 생성 중간 상태를 추적하기 위해 반복적으로 토큰 생성
-max_new_tokens = 256
-generated_tokens = []
-
-# 초기 입력으로 모델의 로짓 계산
-with torch.no_grad():
-    for step in range(max_new_tokens):
-        # 토큰을 하나씩 생성
-        output = model.generate(**inputs, max_new_tokens=1, do_sample=True)
-
-        # 생성된 토큰을 추가
-        new_token = output[:, -1].item()
-        generated_tokens.append(new_token)
-
-        # 현재까지 생성된 텍스트 출력 (옵션)
-        current_output = tokenizer.decode(generated_tokens, skip_special_tokens=True)
-        print(f"Step {step + 1}/{max_new_tokens}: {current_output}")
-
-        # 퍼센트 계산 및 출력
-        percent_complete = (step + 1) / max_new_tokens * 100
-        print(f"Progress: {percent_complete:.2f}%")
-
-# 최종 생성된 텍스트 출력
-final_output = tokenizer.decode(generated_tokens, skip_special_tokens=True)
-print(f"Final Output: {final_output}")
-
+print("10.2")
+# 10.3 max_new_tokens 값을 줄여서 응답 길이 제한
+output = model.generate(**inputs, max_new_tokens=256)
+print("10.3")
+# 10.4 응답 디코딩 및 출력
+response = tokenizer.decode(output[0], skip_special_tokens=True)
+print("10.4")
 print("----------------------------------------------------------------------------------------------------")
+
+# 11. 응답 출력
+print(response)
+
+
