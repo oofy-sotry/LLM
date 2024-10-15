@@ -143,13 +143,18 @@ print("-------------------------------------------------------------------------
 
 # 10. 텍스트 추론 및 결과 생성
 # max_length로 입력 텍스트 길이를 조정
-input_text = template.format(context=format_docs(docs, max_length=4096), question=query)
-inputs = tokenizer(input_text, return_tensors='pt')
-# 수정 이유 : 답변에 대한 길이로 인한 오류 발생
-output = model.generate(**inputs, max_new_tokens=512, top_k=20, top_p=0.9)
+# 10.1 입력 텍스트의 길이를 줄이기
+input_text = template.format(context=format_docs(docs[:3]), question=query)  # 상위 3개의 문서만 사용
+# 10.2 Tokenizer에서 max_length 설정 및 truncate 사용
+inputs = tokenizer(input_text, return_tensors='pt', max_length=4096, truncation=True)
+# 10.3 max_new_tokens 값을 줄여서 응답 길이 제한
+output = model.generate(**inputs, max_new_tokens=256)
+# 10.4 응답 디코딩 및 출력
 response = tokenizer.decode(output[0], skip_special_tokens=True)
 
 print("----------------------------------------------------------------------------------------------------")
 
 # 11. 응답 출력
 print(response)
+
+
