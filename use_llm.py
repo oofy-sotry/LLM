@@ -1,5 +1,6 @@
 import streamlit as st
 import torch
+import gc
 from peft import PeftModel, PeftConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -33,8 +34,12 @@ if user_input:
     # 응답을 디코딩하여 텍스트로 변환
     bot_response = tokenizer.decode(output[0], skip_special_tokens=True)
     
-    # 메모리 최적화: 사용된 메모리 해제
+    # 메모리 최적화: 사용된 GPU 메모리 해제
     torch.cuda.empty_cache()
+
+    # CPU 메모리 최적화: 가비지 컬렉터 실행
+    del input_ids, output  # 불필요한 텐서 삭제
+    gc.collect()  # 가비지 컬렉터 실행
 
     # 대화 기록에 추가
     add_to_chat_history(user_input, bot_response)
