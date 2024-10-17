@@ -1,4 +1,5 @@
 import streamlit as st
+import torch
 from peft import PeftModel, PeftConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -8,6 +9,7 @@ base_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
 model = PeftModel.from_pretrained(base_model, "jeunghyen/llama-2-ko-7b-4")
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
 
+# 세션 상태 초기화
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
@@ -24,14 +26,21 @@ user_input = st.text_input("사용자 입력")
 if user_input:
     # 사용자 입력을 토크나이즈하고 텐서로 변환
     input_ids = tokenizer.encode(user_input, return_tensors="pt")
-    
+
     # 모델로부터 응답 생성
-    output = model.generate(input_ids, max_length=100, num_return_sequences=1)
+    output = model.generate(input_ids, max_length=50, num_return_sequences=1)  # max_length를 줄임
     
     # 응답을 디코딩하여 텍스트로 변환
     bot_response = tokenizer.decode(output[0], skip_special_tokens=True)
     
+    # 메모리 최적화: 사용된 메모리 해제
+    torch.cuda.empty_cache()
+
+    # 대화 기록에 추가
     add_to_chat_history(user_input, bot_response)
+
+    # 사용자 입력 초기화
     st.session_state.user_input = ""
 
+# 대화 기록 표시
 display_chat_history()
