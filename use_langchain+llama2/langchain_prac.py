@@ -22,13 +22,13 @@ from langchain_community.llms import Ollama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-prompt = ChatPromptTemplate.from_template("You are an expert in astronomy. Answer the question. <Question>: {input}")
+prompt = ChatPromptTemplate.from_template("You are an expert in LLM expert. Answer the question. <Question>: {input}")
 llm = Ollama(model="llama2")
 output_parser = StrOutputParser()
 
 chain = prompt | llm | output_parser
 
-response = chain.invoke({"input": "지구의 자전 주기는?"})
+response = chain.invoke({"input": "llama2가 한국어를 할 수 있게 학습하는 방법에 대해서 알려줘"})
 
 print(response)
 
