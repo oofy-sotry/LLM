@@ -4,10 +4,13 @@ import gc
 from peft import PeftModel, PeftConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# 모델과 토크나이저 로드
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B")
-model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B")
+# 모델과 토크나이저 로드 - 허용 안나서 공개 모델 사용
+# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B")
+# model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B")
 
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
+용
 # 세션 상태 초기화
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
