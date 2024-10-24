@@ -8,9 +8,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B")
 # model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B")
 
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
-model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
-용
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B")
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B")
+
 # 세션 상태 초기화
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
