@@ -35,6 +35,7 @@ print(f"분할된 텍스트 개수: {len(splits)}, 예시 분할 텍스트: {spl
 print("----------------------------------------------------------------------------------------------------")
 
 # 3. 인덱싱(Indexing) : 텍스트 -> 임베딩 -> 저장
+# 임베딩 : 문장을 숫자로 변환하는 것
 embeddings_model = HuggingFaceEmbeddings(
     model_name="jhgan/ko-sroberta-nli",
     model_kwargs={'device': 'cuda' if torch.cuda.is_available() else 'cpu'},
