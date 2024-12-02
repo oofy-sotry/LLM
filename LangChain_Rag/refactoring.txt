@@ -1,0 +1,27 @@
+
+1. 데이터 로드(Load Data) - pdf 파일 사용
+from langchain_community.document_loaders import PyPDFLoader, PyPDFDirectoryLoader
+import glob
+
+- pdf_file 폴더의 모든 PDF 파일 경로를 가져오기
+    - 대안 1
+pdf_filepaths = glob.glob('./pdf_folder/*.pdf') 
+
+- 모든 파일을 로드하기 위해 문서를 담을 리스트 초기화
+all_pages = []
+
+- 각 파일에 대해 PyPDFLoader 사용
+for filepath in pdf_filepaths:
+    loader = PyPDFLoader(filepath)
+    pages = loader.load()
+    all_pages.extend(pages)
+
+print(f"문서 길이 : {len(all_pages)} 페이지")
+
+    - 대안 2
+loader = PyPDFDirectoryLoader('./pdf_folder/')
+data = loader.load()
+
+print(f"문서 길이 : {len(data)} 페이지")
+
+
