@@ -1,0 +1,25 @@
+버전 1
+ - 화면 없는 버전
+ - 방법
+    1) app_v1.py 실행
+     - python app_v1.py
+    2) search.py 실행
+     - python search_v1.py
+    3) llm_v1.py 실행
+     - python llm_v1.py
+
+버전 2
+ - 화면 있는 버전
+ - 방법
+    1) app.py 실행
+     - python app.py
+    2) http 서버 실행
+     - python -m http.server
+    3) 화면 접속
+     - http://0.0.0.0:8000/
+
+이슈 사항
+ - BAD REQUEST 400 에러 발생
+  - query를 보내서 search.py에서 응답을 받아야함
+  - response body에 query만 보내서 message, query, content(질문에 대한 답)을 담아서 response 받아야함
+  - body

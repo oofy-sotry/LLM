@@ -31,3 +31,7 @@ https://www.ncloud-forums.com/topic/307
 https://wikidocs.net/231393
 https://wikidocs.net/261571
 https://wikidocs.net/233348
+
+---------------------------------------------------------------------------------------------------
+rag.py -> search.py 와 llm.py로 분할
+app.py로 api서버 생성
