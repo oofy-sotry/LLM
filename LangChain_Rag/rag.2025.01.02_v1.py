@@ -4,11 +4,13 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.vectorstores.utils import DistanceStrategy
 from peft import PeftModel, PeftConfig
-from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModelForQuestionAnswering, pipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from huggingface_hub import login
 import torch
 from langchain import PromptTemplate
 import os
+from langchain.prompts import PromptTemplate
+
 
 # 0. HuggingFace Hub 로그인 (환경 변수로 토큰 가져오기)
 # token = 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
@@ -78,56 +80,68 @@ print("-------------------------------------------------------------------------
 query = "최상위 정책은 뭐야??"
 retriever = vectorstore.as_retriever(
     search_type='mmr',
-    search_kwargs={'k': 3, 'fetch_k': 10}
+    search_kwargs={'k': 3, 'fetch_k': 10}  # fetch_k 값을 최적화하여 조정
 )
 
 try:
-    # 관련 문서 검색
     docs = retriever.get_relevant_documents(query)
     print(f"검색 결과 문서 개수: {len(docs)}, 첫 번째 문서 내용: {docs[0]}")
-
-    print("----------------------------------------------------------------------------------------------------")
-
-    # 8. QA 모델로 질문에 대한 답변 추출
-    answertokenizer = AutoTokenizer.from_pretrained("deepset/roberta-base-squad2")
-    answermodel = AutoModelForQuestionAnswering.from_pretrained("deepset/roberta-base-squad2")
-
-    # QA 모델 파이프라인을 사용하여 답변 추출
-    qa_pipeline = pipeline("question-answering", model=answermodel, tokenizer=answertokenizer)
-
-    # 검색된 문서들을 바탕으로 context에서 질문에 대한 답을 찾기
-    result = qa_pipeline(question=query, context=docs)
-    qa_answer = result['answer']
-    print(f"QA 모델로 추출한 답변: {qa_answer}")
-
-    # 9. LLM을 사용하여 자연스러운 답변 생성
-    # LLM 모델 로드
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B")
-    model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B")
-
-    # 입력 텍스트 구성
-    input_text = f"""
-    질문: {query}
-    QA 모델로 추출한 답변: {qa_answer}
-    """
-
-    inputs = tokenizer(input_text, return_tensors='pt', max_length=4096, truncation=True)
-
-    # LLM을 통해 최종 답변 생성
-    try:
-        generated_text = model.generate(
-            **inputs,
-            max_new_tokens=256,
-            do_sample=True,
-            temperature=0.7
-        )
-        final_output = tokenizer.decode(generated_text[0], skip_special_tokens=True)
-        print(f"최종 생성된 답변: {final_output}")
-    except Exception as e:
-        print(f"텍스트 생성 중 오류 발생: {e}")
-
 except Exception as e:
     print(f"검색 중 오류 발생: {e}")
-    context = "검색된 내용이 없습니다."
+
+print("----------------------------------------------------------------------------------------------------")
+
+# 8. prompt 설정
+template = '''
+Answer the question based only on the following context:
+{docs}
+
+Question: {query}
+'''
+
+prompt = PromptTemplate(template=template)
+
+# 포맷 함수
+def format_docs(docs, max_length=4096):
+    total_length = 0
+    selected_docs = []
+
+    for doc in docs:
+        doc_length = len(doc.page_content)
+        if total_length + doc_length > max_length:
+            break
+        selected_docs.append(doc.page_content)
+        total_length += doc_length
+
+    return '\n\n'.join(selected_docs)
+
+print("----------------------------------------------------------------------------------------------------")
+
+# 9. Peft 및 토크나이저 모델 로드
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B")
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B")
+
+print("----------------------------------------------------------------------------------------------------")
+
+# 10. 텍스트 추론 및 결과 생성
+input_text = template.prompt(
+    context=format_docs(docs[:3], max_length=2048),
+    question=query
+)
+
+inputs = tokenizer(input_text, return_tensors='pt', max_length=4096, truncation=True)
+
+# 토큰을 배치로 생성하여 최적화
+try:
+    generated_text = model.generate(
+        **inputs,
+        max_new_tokens=256,
+        do_sample=True,
+        temperature=0.7
+    )
+    final_output = tokenizer.decode(generated_text[0], skip_special_tokens=True)
+    print(f"최종 생성 텍스트: {final_output}")
+except Exception as e:
+    print(f"텍스트 생성 중 오류 발생: {e}")
 
 print("----------------------------------------------------------------------------------------------------")

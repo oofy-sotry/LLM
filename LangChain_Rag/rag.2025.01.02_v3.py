@@ -86,6 +86,15 @@ try:
     docs = retriever.get_relevant_documents(query)
     print(f"검색 결과 문서 개수: {len(docs)}, 첫 번째 문서 내용: {docs[0]}")
 
+    # 검색된 문서들을 바탕으로 context 만들기
+    seen = set()
+    context = ""
+    for doc in docs:
+        content = doc.page_content.strip()
+        if content not in seen:
+            seen.add(content)
+            context += content + "\n\n"
+
     print("----------------------------------------------------------------------------------------------------")
 
     # 8. QA 모델로 질문에 대한 답변 추출
@@ -96,7 +105,7 @@ try:
     qa_pipeline = pipeline("question-answering", model=answermodel, tokenizer=answertokenizer)
 
     # 검색된 문서들을 바탕으로 context에서 질문에 대한 답을 찾기
-    result = qa_pipeline(question=query, context=docs)
+    result = qa_pipeline(question=query, context=context)
     qa_answer = result['answer']
     print(f"QA 모델로 추출한 답변: {qa_answer}")
 
