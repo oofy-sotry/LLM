@@ -14,42 +14,50 @@ def home():
 def favicon():
     return '', 204
 
-# 1단계: 쿼리와 내용을 저장 (POST)
+# 1단계: 검색 요청 처리
 @app.route('/process', methods=['POST'])
 def process_data():
     try:
         data = request.get_json()
         print(f"Received data: {data}")
         
-        if not isinstance(data, dict) or "query" not in data:
+        if not data or "query" not in data:
             return jsonify({"error": "'query' field is required in JSON"}), 400
         
         query = data.get('query', '')
-        search_results = perform_search(query)  # JSON 직렬화 가능한 데이터로 반환
-        print(f"Search results: {search_results}")
-        
+        search_results = perform_search(query)  # JSON 직렬화 가능한 데이터 반환
+        print("Search results:", search_results)
+
+        if not search_results:
+            return jsonify({"query": query, "contents": []}), 200
+
         return jsonify({"query": query, "contents": search_results}), 200
     except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 400
+        print(f"Error in /process: {e}")
+        return jsonify({"error": str(e)}), 500
 
-# 2단계: LLM을 이용해 최종 답변 생성 (POST)
+# 2단계: LLM 요청 처리
 @app.route('/generate_answer', methods=['POST'])
 def generate_answer():
     try:
         data = request.get_json()
-        query = data.get('query', '')
-        contents = data.get('contents', [])
-        print(f"Received for LLM: query={query}, contents={contents}")
+        print(f"Received for LLM: {data}")
 
-        # LLM 모델을 통해 최종 답변 생성
-        answer = generate_answer_from_llm(query, contents)
+        query = data.get('query', '')
+        print(query)
+        pageContents = data.get('pageContents', [])
+        print(pageContents)
+        
+        if not query or not pageContents:
+            return jsonify({"error": "'query' and 'contents' fields are required"}), 400
+
+        answer = generate_answer_from_llm(query, pageContents)
         print(f"Generated answer: {answer}")
 
         return jsonify({"response": answer}), 200
     except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 400
+        print(f"Error in /generate_answer: {e}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)  # Flask 서버는 포트 5000에서 실행
+    app.run(debug=True, port=5000)  # Flask 서버 실행

@@ -74,10 +74,10 @@ except Exception as e:
 print("----------------------------------------------------------------------------------------------------")
 print("7번")
 # 7. 검색
-query = "최상위 정책은 뭐야??"
+query = "최고 지침은 뭐야"
 retriever = vectorstore.as_retriever(
     search_type='mmr',
-    search_kwargs={'k': 3, 'fetch_k': 10}
+    search_kwargs={'k': 3, 'fetch_k': 20}
 )
 try:
     # 관련 문서 검색

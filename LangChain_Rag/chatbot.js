@@ -18,19 +18,25 @@ sendButton.addEventListener('click', async () => {
     userInput.value = '';
 
     try {
-        console.log("Sending query to Flask server");
+        console.log("Query: " + message);
+        console.log("검색 서버로 전달");
         const searchResults = await sendToServer('http://localhost:5000/process', { query: message });
+        console.log("Search results:", searchResults);
 
-        if (searchResults) {
+        if (searchResults && searchResults.contents) {
             const { query, contents } = searchResults;
+            console.log("LLM 서버로 전달할 query : ", query);
+            const pageContents = contents.map(item => item.page_content);
+            console.log("LLM 서버로 전달할 contents : ", pageContents);
 
-            // LLM 서버로 전달
-            const llmResponse = await sendToServer('http://localhost:5000/generate_answer', { query, contents });
+            console.log("LLM 서버로 전달")
+            const llmResponse = await sendToServer('http://localhost:5000/generate_answer', { query, pageContents });
+            console.log("LLM 생성 결과 : ", llmResponse);
 
-            if (llmResponse) {
-                addMessage('챗봇', llmResponse.response || 'LLM 응답이 비어있습니다.');
+            if (llmResponse && llmResponse.response) {
+                addMessage('챗봇', llmResponse.response);
             } else {
-                addMessage('챗봇', 'LLM 응답 처리 중 오류가 발생했습니다.');
+                addMessage('챗봇', 'LLM 응답이 비어 있습니다.');
             }
         } else {
             addMessage('챗봇', '검색 결과가 없습니다.');
@@ -62,9 +68,23 @@ async function sendToServer(url, body) {
 }
 
 function addMessage(sender, message) {
+    
+    console.log("addMessage의 sender : " + sender);
+    console.log("addMessage의 message : " + message);
+
     const messageElement = document.createElement('div');
+    
+    const displayMessage = sender === '나' ? '사용자 : ' + message : message;
+    
     messageElement.classList.add(sender === '나' ? 'user' : 'bot');
-    messageElement.textContent = message;
-    chatMessages.appendChild(messageElement);
+    messageElement.textContent = displayMessage;
+
+    const firstChild = chatMessages.firstChild;
+    if (firstChild) {
+        chatMessages.insertBefore(messageElement, firstChild);
+    } else {
+        chatMessages.appendChild(messageElement);
+    }
+
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }

@@ -45,14 +45,26 @@ try:
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B")
     model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B")
 
+#    prompt_template = PromptTemplate(
+#        input_variables=["query", "content"],
+#        template="질문: {query}\n답변: {content}"
+#    )
+
+#    prompt = prompt_template.format(query=query, content=content)
+
+#    inputs = tokenizer(prompt, return_tensors='pt', max_length=4096, truncation=True)
+
     prompt_template = PromptTemplate(
         input_variables=["query", "content"],
-        template="질문: {query}\n답변: {content}"
+        template="LLM 답변 : {content}"
     )
+    additional_instructions = "3문장 이내로 간단히 요약해 주세요. 이 지침은 출력에 포함되지 않도록 하세요."
 
     prompt = prompt_template.format(query=query, content=content)
+    final_prompt = f"{prompt}"
 
-    inputs = tokenizer(prompt, return_tensors='pt', max_length=4096, truncation=True)
+    inputs = tokenizer(final_prompt, return_tensors='pt', max_length=4096, truncation=True)
+
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = model.to(device)
