@@ -17,9 +17,3 @@
      - python -m http.server
     3) 화면 접속
      - http://0.0.0.0:8000/
-
-이슈 사항
- - BAD REQUEST 400 에러 발생
-  - query를 보내서 search.py에서 응답을 받아야함
-  - response body에 query만 보내서 message, query, content(질문에 대한 답)을 담아서 response 받아야함
-  - body

@@ -15,8 +15,12 @@ login(token=os.getenv("HUGGINGFACE_TOKEN"))
 print("----------------------------------------------------------------------------------------------------")
 print("1번")
 # 1. 데이터 로드(Load Data) - 웹 문서 사용
-url = 'https://ko.wikipedia.org/wiki/%EC%9C%84%ED%82%A4%EB%B0%B1%EA%B3%BC:%EC%A0%95%EC%B1%85%EA%B3%BC_%EC%A7%80%EC%B9%A8'
-loader = WebBaseLoader(url)
+url1 = 'https://ko.wikipedia.org/wiki/%EC%9C%84%ED%82%A4%EB%B0%B1%EA%B3%BC:%EC%A0%95%EC%B1%85%EA%B3%BC_%EC%A7%80%EC%B9%A8'
+url2 = 'https://ko.wikipedia.org/wiki/%EC%9C%84%ED%82%A4%EB%B0%B1%EA%B3%BC:%ED%8E%B8%EC%A7%91_%EC%A7%80%EC%B9%A8'
+
+loader = WebBaseLoader(
+    web_paths=(url1, url2)
+)
 try:
     docs = loader.load()
     if not docs:
@@ -77,7 +81,7 @@ print("7번")
 query = "최고 지침은 뭐야"
 retriever = vectorstore.as_retriever(
     search_type='mmr',
-    search_kwargs={'k': 3, 'fetch_k': 20}
+    search_kwargs={'k': 3, 'fetch_k': 30}
 )
 try:
     # 관련 문서 검색

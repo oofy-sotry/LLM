@@ -1,12 +1,12 @@
 # 패키지 설치
-!pip install langchain
-!pip install faiss-gpu
-!pip install peft
-!pip install transformers
-!pip install unstructured
-!pip install -U langchain-community
-!pip install langchain_huggingface
-!pip install huggingface_hub
+#!pip install langchain
+#!pip install faiss-gpu
+#!pip install peft
+#!pip install transformers
+#!pip install unstructured
+#!pip install -U langchain-community
+#!pip install langchain_huggingface
+#!pip install huggingface_hub
 
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter

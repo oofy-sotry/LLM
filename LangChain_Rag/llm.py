@@ -2,8 +2,6 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from langchain import PromptTemplate
 import torch
-# from huggingface_hub import login
-# import os
 
 def generate_answer_from_llm(query, pageContents):
     print("LLM 서버로 전달 완료")
@@ -52,10 +50,12 @@ def generate_answer_from_llm(query, pageContents):
     inputs = {key: value.to(device) for key, value in inputs.items()}
 
     # LLM을 통해 최종 답변 생성
+    # do_sample : True -> temperature,top_p 의미 있음
+    # do_sample : False -> temperature,top_p 의미 없음으로 경고 발생
     generated_text = model.generate(
         **inputs,
         max_new_tokens=256,
-        do_sample=False,
+        do_sample=True,
         temperature=0.7,
         top_p=0.95,
         top_k=50,

@@ -20,11 +20,11 @@ def perform_search(query):
         return []
 
     # 텍스트 분할
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100, length_function = len)
     splits = text_splitter.split_documents(docs)
     print("텍스트 분할 완료")
 
-    # 임베딩 계산
+    # 임베딩(데이터의 벡터화)
     embeddings_model = HuggingFaceEmbeddings(
         model_name="jhgan/ko-sroberta-nli",
         model_kwargs={'device': 'cuda' if torch.cuda.is_available() else 'cpu'},
@@ -51,10 +51,10 @@ def perform_search(query):
 # ================================================================================================================= #
 # 검색 설정 변견 #
     # mmr 검색
-    # retriever = vectorstore.as_retriever(search_type='mmr', search_kwargs={'k': 3, 'fetch_k': 30})
+    retriever = vectorstore.as_retriever(search_type='mmr', search_kwargs={'k': 3, 'fetch_k': 30})
     
     # 유사도 검색
-    retriever = vectorstore.as_retriever(search_type='similarity', search_kwargs={'k': 3, 'fetch_k': 30})
+    # retriever = vectorstore.as_retriever(search_type='similarity', search_kwargs={'k': 3, 'fetch_k': 30})
     
     # 임계값 점수로 검색
     # retriever = vectorstore.as_retriever(search_type='similarity_score_threshold', search_kwargs={'k': 3, 'fetch_k': 30, 'score_threshold': 0.1})
@@ -71,6 +71,9 @@ def perform_search(query):
     # docs = retriever
     # print(docs)
 
+    print("=================================================================================================================")
+    print(docs)
+    print("=================================================================================================================")
 
     print("검색 완료")
 # ================================================================================================================= #
